@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install OpenCV via Chocolatey
       run: choco install opencv -y
@@ -23,7 +23,7 @@ jobs:
       run: cmake --build build --config Release --parallel
 
     - name: Upload Windows Executable
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: AstroStacker-Ryzen5600-RTX3050
         path: build/Release/astro_stacker.exe
