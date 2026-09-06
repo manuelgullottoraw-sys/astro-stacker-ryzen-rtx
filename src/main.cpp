@@ -7,11 +7,10 @@
 #include <omp.h>
 #include <opencv2/opencv.hpp>
 
-// Tailored Hardware Constants for Ryzen 5 5600 & 32GB RAM
-constexpr int TARGET_THREADS = 12;      // 6 Cores / 12 Threads (Ryzen 5 5600)
-constexpr size_t RAM_BUDGET_GB = 24;    // Safely use up to 24GB out of 32GB RAM
+constexpr int TARGET_THREADS = 12;
+constexpr size_t RAM_BUDGET_GB = 24;
 
-// Master Frame Generator (Parallelized for Zen 3)
+// Master Frame Generator (Fixed OpenMP thread-local accumulation)
 cv::Mat createMasterFrame(const std::vector<std::string>& filePaths) {
     if (filePaths.empty()) return cv::Mat();
 
@@ -22,15 +21,23 @@ cv::Mat createMasterFrame(const std::vector<std::string>& filePaths) {
 
     cv::Mat master = cv::Mat::zeros(rows, cols, CV_32FC3);
 
-    #pragma omp parallel for num_threads(TARGET_THREADS) reduction(+:master)
-    for (int i = 0; i < numImages; ++i) {
-        cv::Mat img = cv::imread(filePaths[i], cv::IMREAD_COLOR);
-        cv::Mat imgFloat;
-        img.convertTo(imgFloat, CV_32FC3);
-        
+    #pragma omp parallel num_threads(TARGET_THREADS)
+    {
+        cv::Mat localMaster = cv::Mat::zeros(rows, cols, CV_32FC3);
+
+        #pragma omp for nowait
+        for (int i = 0; i < numImages; ++i) {
+            cv::Mat img = cv::imread(filePaths[i], cv::IMREAD_COLOR);
+            if (!img.empty()) {
+                cv::Mat imgFloat;
+                img.convertTo(imgFloat, CV_32FC3);
+                localMaster += imgFloat;
+            }
+        }
+
         #pragma omp critical
         {
-            master += imgFloat;
+            master += localMaster;
         }
     }
 
@@ -38,7 +45,6 @@ cv::Mat createMasterFrame(const std::vector<std::string>& filePaths) {
     return master;
 }
 
-// Hardware-Matched Stacking Pipeline
 cv::Mat stackImagesSigmaClip(
     const std::vector<std::string>& lightPaths,
     const std::vector<std::string>& darkPaths,
@@ -48,7 +54,6 @@ cv::Mat stackImagesSigmaClip(
 ) {
     if (lightPaths.empty()) return cv::Mat();
 
-    // Force OpenMP thread count to match 12 Logical Processors
     omp_set_num_threads(TARGET_THREADS);
 
     int numLights = static_cast<int>(lightPaths.size());
@@ -61,7 +66,6 @@ cv::Mat stackImagesSigmaClip(
     std::cout << "    - CPU: AMD Ryzen 5 5600 (" << TARGET_THREADS << " Threads active)" << std::endl;
     std::cout << "    - Target RAM Allocation: Up to " << RAM_BUDGET_GB << " GB" << std::endl;
 
-    // 1. Process Calibration Frames
     cv::Mat masterBias = cv::Mat::zeros(rows, cols, CV_32FC3);
     cv::Mat masterDark = cv::Mat::zeros(rows, cols, CV_32FC3);
     cv::Mat masterFlat = cv::Mat::ones(rows, cols, CV_32FC3) * 255.0f;
@@ -92,7 +96,6 @@ cv::Mat stackImagesSigmaClip(
         masterFlat /= avgVal;
     }
 
-    // 2. Load & Calibrate Light Frames in RAM
     std::cout << "[+] Pre-loading " << numLights << " Light Frames into 32GB RAM..." << std::endl;
     std::vector<cv::Mat> images(numLights);
 
@@ -102,14 +105,12 @@ cv::Mat stackImagesSigmaClip(
         cv::Mat imgFloat;
         img.convertTo(imgFloat, CV_32FC3);
 
-        // Standard Astrophotography Calibration
         cv::Mat calibrated = (imgFloat - masterDark - masterBias) / masterFlat;
         cv::max(calibrated, 0.0f, calibrated);
 
         images[i] = calibrated;
     }
 
-    // 3. Sigma Clipping Stacking (Dynamic Load-Balancing across 12 Threads)
     std::cout << "[+] Multi-core Stacking in progress..." << std::endl;
     cv::Mat result = cv::Mat::zeros(rows, cols, CV_32FC3);
 
