@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astro Stacker Pro - Ryzen 5600 + RTX 3050 Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0b0e14;
+            --panel-bg: rgba(22, 27, 34, 0.75);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-purple: #7c3aed;
+            --accent-blue: #3b82f6;
+            --accent-glow: rgba(124, 58, 237, 0.35);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(124, 58, 237, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.12) 0%, transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a78bfa, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .hardware-badge {
+            display: inline-flex;
+            gap: 12px;
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            color: #d1d5db;
+        }
+
+        .grid-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .input-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .input-card:hover {
+            border-color: rgba(124, 58, 237, 0.5);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .input-card h3 {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .badge-light { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .badge-dark { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .badge-flat { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .badge-bias { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+
+        .drop-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            transition: background 0.2s;
+        }
+
+        .drop-zone:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent-purple);
+        }
+
+        .file-count {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: #a78bfa;
+            font-weight: 600;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 8px 25px var(--accent-glow);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(124, 58, 237, 0.5);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .cmd-preview {
+            margin-top: 24px;
+            background: #06080c;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .cmd-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        code {
+            display: block;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #34d399;
+            word-break: break-all;
+            background: transparent;
+        }
+
+        .btn-copy {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .btn-copy:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Astro Stacker Pro</h1>
+        <p>Interfaccia Grafica di Controllo per Elaborazione Astrofotografica</p>
+        <div class="hardware-badge">
+            <span>⚡ AMD Ryzen 5 5600 (12T)</span>
+            <span>🚀 NVIDIA RTX 3050</span>
+            <span>💾 RAM Cache 24GB</span>
+        </div>
+    </header>
+
+    <div class="grid-inputs">
+        <div class="input-card">
+            <h3>Light Frames <span class="badge badge-light">Obbligatorio</span></h3>
+            <div class="drop-zone" onclick="document.getElementById('file-light').click()">
+                Seleziona i file Light (.jpg, .png)
+                <input type="file" id="file-light" multiple accept="image/*" style="display:none;" onchange="updateFiles('light')">
+            </div>
+            <div id="count-light" class="file-count">0 file selezionati</div>
+        </div>
+
+        <div class="input-card">
+            <h3>Dark Frames <span class="badge badge-dark">Calibrazione</span></h3>
+            <div class="drop-zone" onclick="document.getElementById('file-dark').click()">
+                Seleziona i file Dark
+                <input type="file" id="file-dark" multiple accept="image/*" style="display:none;" onchange="updateFiles('dark')">
+            </div>
+            <div id="count-dark" class="file-count">0 file selezionati</div>
+        </div>
+
+        <div class="input-card">
+            <h3>Flat Frames <span class="badge badge-flat">Calibrazione</span></h3>
+            <div class="drop-zone" onclick="document.getElementById('file-flat').click()">
+                Seleziona i file Flat
+                <input type="file" id="file-flat" multiple accept="image/*" style="display:none;" onchange="updateFiles('flat')">
+            </div>
+            <div id="count-flat" class="file-count">0 file selezionati</div>
+        </div>
+
+        <div class="input-card">
+            <h3>Bias Frames <span class="badge badge-bias">Calibrazione</span></h3>
+            <div class="drop-zone" onclick="document.getElementById('file-bias').click()">
+                Seleziona i file Bias
+                <input type="file" id="file-bias" multiple accept="image/*" style="display:none;" onchange="updateFiles('bias')">
+            </div>
+            <div id="count-bias" class="file-count">0 file selezionati</div>
+        </div>
+    </div>
+
+    <button class="btn-submit" onclick="generateCommand()">Genera Comando Stacking</button>
+
+    <div class="cmd-preview">
+        <div class="cmd-header">
+            <span>Comando Esecutivo generato per astro_stacker.exe:</span>
+            <button class="btn-copy" onclick="copyCommand()">Copia Comando</button>
+        </div>
+        <code id="cmd-output">astro_stacker.exe output.png -light ...</code>
+    </div>
+</div>
+
+<script>
+    const filesStore = { light: [], dark: [], flat: [], bias: [] };
+
+    function updateFiles(type) {
+        const input = document.getElementById(`file-${type}`);
+        filesStore[type] = Array.from(input.files).map(f => `"${f.name}"`);
+        document.getElementById(`count-${type}`).innerText = `${filesStore[type].length} file selezionati`;
+        generateCommand();
+    }
+
+    function generateCommand() {
+        let cmd = "astro_stacker.exe output_stacked.png";
+        
+        if (filesStore.light.length > 0) {
+            cmd += " -light " + filesStore.light.join(" ");
+        } else {
+            cmd += " -light <seleziona_almeno_un_light_frame>";
+        }
+
+        if (filesStore.dark.length > 0) cmd += " -dark " + filesStore.dark.join(" ");
+        if (filesStore.flat.length > 0) cmd += " -flat " + filesStore.flat.join(" ");
+        if (filesStore.bias.length > 0) cmd += " -bias " + filesStore.bias.join(" ");
+
+        document.getElementById("cmd-output").innerText = cmd;
+    }
+
+    function copyCommand() {
+        const text = document.getElementById("cmd-output").innerText;
+        navigator.clipboard.writeText(text);
+        alert("Comando copiato negli appunti!");
+    }
+</script>
+
+</body>
+</html>

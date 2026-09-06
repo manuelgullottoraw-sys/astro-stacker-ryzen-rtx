@@ -22,8 +22,19 @@ jobs:
     - name: Build Executable (MSVC)
       run: cmake --build build --config Release --parallel
 
-    - name: Upload Windows Executable
+    - name: Bundle DLLs and Assets for Standalone Portable Package
+      shell: cmd
+      run: |
+        copy C:\tools\opencv\build\x64\vc16\bin\opencv_world*.dll build\Release\
+        copy index.html build\Release\
+        copy launch_gui.bat build\Release\
+
+    - name: Upload Windows Executable (Portable Package)
       uses: actions/upload-artifact@v4
       with:
-        name: AstroStacker-Ryzen5600-RTX3050
-        path: build/Release/astro_stacker.exe
+        name: AstroStacker-Portable-Windows
+        path: |
+          build/Release/astro_stacker.exe
+          build/Release/*.dll
+          build/Release/index.html
+          build/Release/launch_gui.bat

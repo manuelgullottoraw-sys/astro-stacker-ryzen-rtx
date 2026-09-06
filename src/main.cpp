@@ -10,12 +10,13 @@
 constexpr int TARGET_THREADS = 12;
 constexpr size_t RAM_BUDGET_GB = 24;
 
-// Master Frame Generator (Fixed OpenMP thread-local accumulation)
 cv::Mat createMasterFrame(const std::vector<std::string>& filePaths) {
     if (filePaths.empty()) return cv::Mat();
 
     int numImages = static_cast<int>(filePaths.size());
     cv::Mat firstImg = cv::imread(filePaths[0], cv::IMREAD_COLOR);
+    if (firstImg.empty()) return cv::Mat();
+
     int rows = firstImg.rows;
     int cols = firstImg.cols;
 
@@ -58,6 +59,8 @@ cv::Mat stackImagesSigmaClip(
 
     int numLights = static_cast<int>(lightPaths.size());
     cv::Mat firstImg = cv::imread(lightPaths[0], cv::IMREAD_COLOR);
+    if (firstImg.empty()) return cv::Mat();
+
     int rows = firstImg.rows;
     int cols = firstImg.cols;
     int channels = firstImg.channels();
@@ -96,19 +99,19 @@ cv::Mat stackImagesSigmaClip(
         masterFlat /= avgVal;
     }
 
-    std::cout << "[+] Pre-loading " << numLights << " Light Frames into 32GB RAM..." << std::endl;
+    std::cout << "[+] Pre-loading " << numLights << " Light Frames into RAM..." << std::endl;
     std::vector<cv::Mat> images(numLights);
 
     #pragma omp parallel for num_threads(TARGET_THREADS)
     for (int i = 0; i < numLights; ++i) {
         cv::Mat img = cv::imread(lightPaths[i], cv::IMREAD_COLOR);
-        cv::Mat imgFloat;
-        img.convertTo(imgFloat, CV_32FC3);
-
-        cv::Mat calibrated = (imgFloat - masterDark - masterBias) / masterFlat;
-        cv::max(calibrated, 0.0f, calibrated);
-
-        images[i] = calibrated;
+        if (!img.empty()) {
+            cv::Mat imgFloat;
+            img.convertTo(imgFloat, CV_32FC3);
+            cv::Mat calibrated = (imgFloat - masterDark - masterBias) / masterFlat;
+            cv::max(calibrated, 0.0f, calibrated);
+            images[i] = calibrated;
+        }
     }
 
     std::cout << "[+] Multi-core Stacking in progress..." << std::endl;
@@ -119,19 +122,25 @@ cv::Mat stackImagesSigmaClip(
         for (int c = 0; c < cols; ++c) {
             for (int ch = 0; ch < channels; ++ch) {
                 
-                std::vector<float> pixelValues(numLights);
+                std::vector<float> pixelValues;
+                pixelValues.reserve(numLights);
+
                 for (int i = 0; i < numLights; ++i) {
-                    pixelValues[i] = images[i].at<cv::Vec3f>(r, c)[ch];
+                    if (!images[i].empty()) {
+                        pixelValues.push_back(images[i].at<cv::Vec3f>(r, c)[ch]);
+                    }
                 }
 
+                if (pixelValues.empty()) continue;
+
                 float sum = std::accumulate(pixelValues.begin(), pixelValues.end(), 0.0f);
-                float mean = sum / numLights;
+                float mean = sum / pixelValues.size();
 
                 float sq_sum = 0.0f;
                 for (float val : pixelValues) {
                     sq_sum += (val - mean) * (val - mean);
                 }
-                float stdDev = std::sqrt(sq_sum / numLights);
+                float stdDev = std::sqrt(sq_sum / pixelValues.size());
 
                 float filteredSum = 0.0f;
                 int count = 0;

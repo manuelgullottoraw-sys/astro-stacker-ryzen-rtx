@@ -14,3 +14,11 @@ find_package(OpenCV REQUIRED)
 
 add_executable(astro_stacker src/main.cpp)
 target_link_libraries(astro_stacker PRIVATE ${OpenCV_LIBS})
+
+# Auto-copy OpenCV DLL to build output directory during local CMake build
+add_custom_command(TARGET astro_stacker POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${OpenCV_DIR}/x64/vc16/bin/opencv_world4130.dll"
+    $<TARGET_FILE_DIR:astro_stacker>
+    EXCLUDE_FROM_ALL
+)
