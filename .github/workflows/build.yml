@@ -1,0 +1,29 @@
+name: Build Astro Stacker (Ryzen 5600 + RTX 3050)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install OpenCV via Chocolatey
+      run: choco install opencv -y
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -A x64
+
+    - name: Build Executable (MSVC)
+      run: cmake --build build --config Release --parallel
+
+    - name: Upload Windows Executable
+      uses: actions/upload-artifact@v3
+      with:
+        name: AstroStacker-Ryzen5600-RTX3050
+        path: build/Release/astro_stacker.exe
