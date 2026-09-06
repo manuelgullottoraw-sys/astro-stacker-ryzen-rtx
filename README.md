@@ -15,7 +15,7 @@ Customized high-performance image stacker optimized specifically for:
 ```cmd
 mkdir build
 cd build
-cmake -G "Visual Studio 17 2022" -A x64 ..
+cmake -G "Visual Studio 17 2022" -A x64 -DOpenCV_DIR="C:/path/to/opencv/build" ..
 cmake --build . --config Release
 ```
 

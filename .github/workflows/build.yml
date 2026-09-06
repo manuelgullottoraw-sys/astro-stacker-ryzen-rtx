@@ -17,7 +17,7 @@ jobs:
       run: choco install opencv -y
 
     - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -A x64
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release -A x64 -DOpenCV_DIR="C:/tools/opencv/build"
 
     - name: Build Executable (MSVC)
       run: cmake --build build --config Release --parallel
